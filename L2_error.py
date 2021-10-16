@@ -13,53 +13,6 @@ import polynomial
 
 import matplotlib.pyplot as plt
 
-def main ():
-	# print_coefs()
-	# plot_all_l2 ()
-
-	debug = True
-	plot_jacobi_comp(debug=debug)
-	plot_cops_comp (debug=debug)
-
-
-def plot_q_comp (all_ja, legend="", N=-1, debug=False):
-	N = N if N > 0 else (10 if debug else 40)
-	all_q = np.linspace(0.05, 0.95, 20)
-
-	n_sample = int(1e4) if debug else int(1e5)
-	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
-
-	plt.plot(all_q, all_l2.T, "--o")
-	plt.legend(legend)
-	plt.xlabel("Quantile q")
-	plt.ylabel("L2 Error")
-	plt.title("N="+str(N))
-	plt.show()
-
-
-def plot_jacobi_comp (debug=False):
-	all_ja = [
-		polynomial.JacobiApproximation (0, 0),
-		polynomial.JacobiApproximation (-.5, -.5),
-		polynomial.JacobiApproximation (10, 12),
-		polynomial.JacobiApproximation (-.7, .3),
-
-	]
-	plot_q_comp(all_ja, [ja.full_description() for ja in all_ja], debug=debug)
-
-def plot_cops_comp (debug=False):
-	all_ja = [
-		polynomial.HermiteApproximation (),
-		polynomial.LegendreApproximation(),
-		polynomial.JacobiApproximation (-.5, -.5),
-		polynomial.JacobiApproximation (10, 12),
-		polynomial.LaguerreApproximation(0),
-		polynomial.LaguerreApproximation(3),
-	]
-	plot_q_comp(all_ja, [ja.full_description() for ja in all_ja], debug=debug)
-
-
-
 
 
 def print_coefs ():
@@ -100,6 +53,108 @@ def plot_all_l2 ():
 	plot_l2(polynomial.JacobiApproximation (3, 4))
 	plot_l2(polynomial.LegendreApproximation ())
 
+def plot_q_comp (all_ja, legend="", N=-1, debug=False):
+	N = N if N > 0 else (10 if debug else 40)
+	all_q = np.linspace(0.05, 0.95, 20)
+
+	n_sample = int(1e4) if debug else int(1e5)
+	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
+
+	plt.plot(all_q, all_l2.T, "--o")
+	plt.legend(legend)
+	plt.xlabel("Quantile q")
+	plt.ylabel("L2 Error")
+	plt.title("N="+str(N))
+	plt.show()
+
+
+def plot_jacobi_comp (debug=False):
+	N = 10 if debug else 40
+	all_q = np.linspace(0.05, 0.95, 20)
+
+	n_sample = int(1e4) if debug else int(1e5)
+
+	all_ja = [
+		polynomial.JacobiApproximation (0, 0),
+		polynomial.JacobiApproximation (-.5, -.5),
+		polynomial.JacobiApproximation (10, 12),
+		polynomial.JacobiApproximation (-.7, .3),
+
+	]
+
+	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
+
+	plt.plot(all_q, all_l2.T, "--o")
+	plt.legend([ja.full_description() for ja in all_ja])
+	plt.xlabel("Quantile q")
+	plt.ylabel("L2 Error")
+	plt.title("N="+str(N))
+	plt.show()
+
+def plot_cops_comp (debug=False):
+	N = 10 if debug else 50
+	all_q = np.linspace(0.05, 0.95, 20)
+
+	n_sample = int(1e4) if debug else int(1e5)
+
+	all_ja = [
+		polynomial.HermiteApproximation (),
+		polynomial.LegendreApproximation(),
+		polynomial.JacobiApproximation (-.5, -.5),
+		polynomial.JacobiApproximation (10, 12),
+		polynomial.LaguerreApproximation(0),
+		polynomial.LaguerreApproximation(3),
+	]
+
+	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
+
+	plt.plot(all_q, all_l2.T, "--o")
+	plt.legend([ja.full_description() for ja in all_ja])
+	plt.xlabel("Quantile q")
+	plt.ylabel("L2 Error")
+	plt.title("N="+str(N))
+	plt.show()
+
+def plot_error_ratio (debug=False):
+	N = 10 if debug else 40
+	all_q = np.linspace(0.05, 0.95, 20)
+
+	n_sample = int(1e4) if debug else int(1e5)
+	
+	all_ja = [
+		polynomial.HermiteApproximation (),
+		polynomial.LegendreApproximation(),
+		polynomial.JacobiApproximation (-.5, -.5),
+		polynomial.JacobiApproximation (10, 12),
+		polynomial.LaguerreApproximation(0),
+		polynomial.LaguerreApproximation(3),
+	]
+
+	all_ratio = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) * ja.bound_inv(N, all_q) for ja in all_ja], axis=0)
+
+	plt.plot(all_q, all_ratio.T, "--o")
+	plt.legend([ja.full_description() for ja in all_ja])
+	plt.xlabel("Quantile q")
+	plt.ylabel("Ratio of L2 error and error estimate")
+	plt.title("N="+str(N))
+	plt.show()
+
+
+def main ():
+	# print_coefs()
+	# plot_all_l2 ()
+
+	debug = False
+	
+	# plot_jacobi_comp(debug=debug)
+	# plot_cops_comp (debug=debug)
+
+
+	plot_error_ratio (debug=debug)
+
+	# TODO : afficher les rapports entre les erreurs estimées et les erreurs réelles. 
+	# TODO : Vérifier les formules pour Jacobi
+	# TODO : Faire les dernière courbes du papier (faibles quantiles, grands quantiles)
 
 
 if __name__ == "__main__":
