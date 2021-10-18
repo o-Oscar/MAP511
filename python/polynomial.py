@@ -41,7 +41,7 @@ class PolynomialApproximation:
 		X = self.random_sample(size)
 		fX = np.greater(X, c).astype(np.float32)
 		
-		all_poly_func = [self.poly_func(n, c) for n in range(N)]
+		all_poly_func = [self.poly_func(n) for n in range(N)]
 		coefs = np.array([self.gamma(n, c, use_rec=False) for n in range(N)])
 		monoX = np.stack([poly(X) * coef for poly, coef in zip(all_poly_func, coefs)], axis=0)
 		pX = np.cumsum(monoX, axis=0)
@@ -51,6 +51,13 @@ class PolynomialApproximation:
 	def calc_all_l2 (self, N, all_c, size=int(1e5)):
 
 		X = self.random_sample(size) # shape (sample)
+		fX, pX = self.calc_approx(N, all_c, X)
+		pX = pX[:,-1]
+		
+		return np.sqrt(np.mean(np.square(fX-pX), axis=1)) # shape (all_c)
+	
+	def calc_approx (self, N, all_c, X):
+
 		fX = np.stack([np.greater(X, c).astype(np.float32) for c in all_c], axis=0) # shape (all_c, sample)
 		
 		all_mono = [self.poly_func(n) for n in range(N)] # shape (degree)
@@ -58,9 +65,11 @@ class PolynomialApproximation:
 		monoX = np.stack([poly(X) for poly in all_mono]) # shape (degree, sample)
 		
 		# TODO : give the option to keep all intermediary polynomials in order to get the evolution of accuracy with rising degree
-		pX = coefs @ monoX # shape (all_c, sample)
-		
-		return np.sqrt(np.mean(np.square(fX-pX), axis=1)) # shape (all_c)
+		# pX = coefs @ monoX # shape (all_c, sample)
+		pX = np.einsum('ij,jk->ijk', coefs, monoX) # shape (all_c, degree, sample)
+		pX = np.cumsum(pX, axis=1) # shape (all_c, degree, sample)
+
+		return fX, pX
 	
 	def params_description (self):
 		return "   ".join(self.string_params)

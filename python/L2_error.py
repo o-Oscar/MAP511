@@ -1,6 +1,6 @@
 """
 source ./travail/x3a/.venv/bin/activate
-cd travail/x3a/ea1/
+cd travail/x3a/ea1/python
 python L2_error.py
 """
 
@@ -39,19 +39,36 @@ def print_coefs ():
 	print([ja_app.gamma(n, c, use_rec=True) for n in range(N)])
 
 
-def plot_l2 (poly_app):
-	N = 20
+def plot_l2 (poly_app, all_c, all_slopes):
+	N = 80
 	all_n = list(range(1, N))
-	all_l2 = poly_app.calc_l2(N, 0.3)[1:]
-	plt.semilogy(np.log10(all_n), all_l2)
+
+	n_sample = int(1e5)
+	X = poly_app.random_sample(n_sample) # shape (sample)
+	fX, pX = poly_app.calc_approx(N, all_c, X)
+	fX = np.expand_dims(fX, axis=1)
+	
+	all_l2 = np.sqrt(np.mean(np.square(fX-pX), axis=2))[:,1:] # shape (all_c, degree)
+
+	plt.plot(np.log(all_n), np.log(all_l2.T), "--.")
 	# plt.loglog(all_n, all_l2)
+
+	y_start = [-1.25, -1.5]
+	m = np.max(np.log(all_n))
+	for y, slope in zip(y_start, all_slopes):
+		plt.plot([0, m], [y, y+slope*m])
+
+	plt.legend(["c="+str(c) for c in all_c] + ["slope="+str(slope) for slope in all_slopes])
+	plt.title("L2 Error - " + poly_app.full_description())
 	plt.show()
 
 def plot_all_l2 ():
-	plot_l2(polynomial.HermiteApproximation ())
-	plot_l2(polynomial.LaguerreApproximation (0))
-	plot_l2(polynomial.JacobiApproximation (3, 4))
-	plot_l2(polynomial.LegendreApproximation ())
+	plot_l2(polynomial.HermiteApproximation (), [0.1, 1, 2], [-1/4])
+	plot_l2(polynomial.LegendreApproximation (), [0., 0.4, 0.9], [-1/2])
+	plot_l2(polynomial.LaguerreApproximation (0), [1, 2, 3], [-1/4])
+	plot_l2(polynomial.LaguerreApproximation (3), [1, 2, 3], [-1/4])
+	plot_l2(polynomial.JacobiApproximation (3, 4), [0., 0.4, 0.6], [-1/4, -1/2])
+	plot_l2(polynomial.JacobiApproximation (12, 11), [0., 0.4, 0.6], [-1/4, -1/2])
 
 def plot_q_comp (all_ja, legend="", N=-1, debug=False):
 	N = N if N > 0 else (10 if debug else 40)
@@ -207,7 +224,7 @@ def plot_test (debug=False):
 
 def main ():
 	# print_coefs()
-	# plot_all_l2 ()
+	plot_all_l2 ()
 
 	debug = False
 	
@@ -216,8 +233,8 @@ def main ():
 
 	# plot_error_ratio (debug=debug)
 
-	plot_small_quantile (debug=debug)
-	plot_high_quantile (debug=debug)
+	# plot_small_quantile (debug=debug)
+	# plot_high_quantile (debug=debug)
 
 	# plot_test (debug=debug)
 
