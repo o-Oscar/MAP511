@@ -9,6 +9,7 @@ import scipy
 import scipy.stats
 import scipy.special
 import sys
+import time
 
 import portfolio_utils
 import polynomial
@@ -16,6 +17,7 @@ import polynomial
 import matplotlib.pyplot as plt
 
 from multiprocessing import Pool
+
 
 
 
@@ -122,6 +124,7 @@ def plot_epsilon (all_i, debug=True):
 		plt.title("i="+str(i))
 		plt.show()
 
+
 def sub_generate_epsilon_i (args):
 	max_I, K = args
 	portfolio = create_protfolio_A(K)
@@ -138,15 +141,15 @@ def generate_epsilon_i (max_I, debug=True):
 
 from scipy.stats.kde import gaussian_kde
 
-def sub_simulate_L (args):
+def sub_simulate_cond_L (args):
 	Z, K, n_parallel = args
 	portfolio = create_protfolio_A(K)
-	return portfolio.simulate_L(Z, n_parallel)
+	return portfolio.simulate_cond_L(Z, n_parallel)
 
 
 def plot_LI (all_I, all_Z, debug=True):
-	n_sample = int(1e3) if debug else int(1e4)
-	K = int(5e3) if debug else int(5e5)
+	n_sample = int(1e2) if debug else int(1e4)
+	K = int(5e5) if debug else int(5e5)
 	max_I = max(all_I)
 	all_epsilon = np.load("portfolioA/epsilon.npy")
 
@@ -157,11 +160,15 @@ def plot_LI (all_I, all_Z, debug=True):
 		LI = np.cumsum(Li, axis=1)
 		LI = LI[:,all_I]
 
+		with Pool(8) as p:
+			data = np.concatenate(p.map(sub_simulate_cond_L, [(Z, K, 10)]*(n_sample//10)), axis=0)
+		kde = gaussian_kde(data)
+
+		# m = min(np.min(LI), np.min(data))
+		# M = min(np.min(LI), np.min(data))
+		# all_x = np.linspace(m, M, 50)
 		all_x = np.linspace(np.min(LI), np.max(LI), 50)
 
-		with Pool(8) as p:
-			data = np.concatenate(p.map(sub_simulate_L, [(Z, K, 10)]*(n_sample//10)), axis=0)
-		kde = gaussian_kde(data)
 		plt.plot(all_x, kde(all_x))
 
 		for data in LI.T:
@@ -171,6 +178,107 @@ def plot_LI (all_I, all_Z, debug=True):
 		plt.legend(["L"] + ["I="+str(I) for I in all_I])
 		plt.title("Z=" + str(Z))
 		plt.show()
+
+def sub_simulate_L (args):
+	K, n_parallel = args
+	portfolio = create_protfolio_A(K)
+	return portfolio.simulate_L(n_parallel)
+
+def generate_distribution ():
+	K = int(5e5)
+	n_sample = 100000
+	start = time.time()
+	with Pool(8) as p:
+		data = np.concatenate(p.map(sub_simulate_L, [(K, 10)]*(n_sample//10)), axis=0)
+	print(time.time()-start)
+	np.save("portfolioA/L.npy", data)
+
+def plot_distribution ():
+	data = np.load("portfolioA/L.npy")
+	kde = gaussian_kde(data)
+
+	all_x = np.linspace(np.min(data), np.max(data), 100)
+
+	plt.hist(data, density=True, bins=50)
+	plt.plot(all_x, kde(all_x))
+	plt.legend(["L"])
+	plt.show()
+
+def plot_gaussian_distribution ():
+	K = int(5e5)
+	portfolio = create_protfolio_A(K)
+	all_I = [1, 3, 6, 9]
+	max_I = max(all_I)
+
+	fac = np.array([np.power(2, -i/2) for i in range(max_I+1)])
+
+	m = np.array([portfolio.m(i) for i in range(max_I+1)])
+	v = portfolio.s_matrix(max_I+1)
+
+	all_data = [[] for I in all_I]
+	for sample in range(100000):
+		alpha = np.random.multivariate_normal(m, v) * fac
+		Z = np.random.normal()
+		for data, I in zip(all_data, all_I):
+			L = np.polynomial.hermite.Hermite(alpha[:I+1])(Z/np.sqrt(2))
+			data.append(L)
+
+	data = np.load("portfolioA/L.npy")
+
+	all_x = np.linspace(np.min(data), np.max(data), 100)
+
+	kde = gaussian_kde(data)
+	plt.plot(all_x, kde(all_x))
+
+	for data, I in zip(all_data, all_I):
+		kde = gaussian_kde(data)
+		plt.plot(all_x, kde(all_x))
+
+	plt.legend(["L"] + ["I="+str(I) for I in all_I])
+	plt.show()
+
+def qqplots ():
+	L_data = np.load("portfolioA/L.npy")
+	L_data = np.sort(L_data)#[::1000]
+
+	K = int(5e5)
+	portfolio = create_protfolio_A(K)
+	all_I = [1, 3, 6, 9]
+	max_I = max(all_I)
+
+	fac = np.array([np.power(2, -i/2) for i in range(max_I+1)])
+
+	m = np.array([portfolio.m(i) for i in range(max_I+1)])
+	v = portfolio.s_matrix(max_I+1)
+
+	all_data = [[] for I in all_I]
+	for sample in range(100000):
+		alpha = np.random.multivariate_normal(m, v) * fac
+		Z = np.random.normal()
+		for data, I in zip(all_data, all_I):
+			L = np.polynomial.hermite.Hermite(alpha[:I+1])(Z/np.sqrt(2))
+			data.append(L)
+	
+	sorted_data = []
+	for I, data in zip(all_I, all_data):
+		L_g = np.sort(data)
+		sorted_data.append(L_g)
+
+		res = scipy.stats.linregress(L_g, L_data)
+		x0 = np.min(L_data)
+		x1 = np.max(L_data)
+		y0 = x0*res.slope + res.intercept
+		y1 = x1*res.slope + res.intercept
+
+		plt.plot(L_data, sorted_data[-1], ".")
+		plt.plot([x0,x1], [y0,y1], "k")
+		plt.title("I="+str(I))
+		plt.show()
+
+	# measurements = np.random.normal(loc = 20, scale = 5, size=100)   
+	# scipy.stats.probplot(measurements, dist="norm", plot=plt)
+	# plt.show()
+
 
 
 def main ():
@@ -184,13 +292,15 @@ def main ():
 
 	# plot_epsilon([1, 3, 6, 9], False)
 
-	# plot_LI([1, 3, 6, 9], True)
+	# generate_epsilon_i(9, False)
 
-	# generate_epsilon_i(9, True)
+	# plot_LI([1, 3, 6, 9], [-1, 0, 1, 2], False)
 
-	plot_LI([1, 3, 6, 9], [-1, 0, 1, 2], True)
+	# generate_distribution ()
+	# plot_distribution ()
+	# plot_gaussian_distribution ()
 
-
+	qqplots ()
 
 if __name__ == "__main__":
 	main()
