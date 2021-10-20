@@ -140,6 +140,7 @@ class Portfolio:
 
 		self.all_m = {}
 		self.all_s = {}
+		self.all_matrix = {}
 
 		if do_init_mu_sigma:
 			self.init_mu_sigma ()
@@ -163,8 +164,17 @@ class Portfolio:
 		return self.all_s[key]
 	
 	def s_matrix (self, N):
-		to_return = [[self.s(i,j) for j in range(N)] for i in range(N)]
-		return np.array(to_return)
+		if not N in self.all_matrix:
+			print("calculating sigma matrix")
+			to_return = np.zeros((N,N))
+			for l, a, b in zip(self.all_l, self.all_a, self.all_b):
+				sigma = SigmaCalculator(a, b)
+				to_return += l**2 * sigma.get_matrix(N)
+			print("done")
+			self.all_matrix[N] = to_return
+		return self.all_matrix
+		# to_return = [[self.s(i,j) for j in range(N)] for i in range(N)]
+		# return np.array(to_return)
 
 	def calc_m (self, i):
 		return np.sum([l * np.sign(rho) * mu[i] for l, rho, mu in zip(self.all_l, self.all_rho, self.all_mu)])

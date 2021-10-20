@@ -150,7 +150,7 @@ def sub_simulate_cond_L (args):
 	Z, portfolio, n_parallel = args
 	to_return = []
 	for sample in range(n_parallel//10):
-		to_return.append(portfolio.simulate_cond_L(Z, n_parallel))
+		to_return.append(portfolio.simulate_cond_L(Z, 10))
 	return np.concatenate(to_return)
 
 def plot_conditionnal_L (portfolio, all_Z, all_I, config):
@@ -166,8 +166,7 @@ def plot_conditionnal_L (portfolio, all_Z, all_I, config):
 	with Pool(8) as p:
 		for Z in all_Z:
 			
-			if config.debug:
-				print("simulation of Lg")
+			print("simulation of Lg")
 			HeZ = np.array([np.polynomial.hermite.Hermite(np.eye(i+1)[i])(Z/np.sqrt(2)) / np.power(2, i/2) for i in range(max_I+1)]).reshape((1, -1))
 			epsilon = np.random.multivariate_normal(m, v, n_sample)
 			Li = epsilon * HeZ
@@ -176,8 +175,7 @@ def plot_conditionnal_L (portfolio, all_Z, all_I, config):
 
 			all_x = np.linspace(np.min(LI), np.max(LI), 100)
 
-			if config.debug:
-				print("simulation of L")
+			print("simulation of L")
 			data = np.concatenate(p.map(sub_simulate_cond_L, [(Z, portfolio.sub_portfolio(), n_sample//8)]*8), axis=0)
 			kde = gaussian_kde(data)
 			plt.plot(all_x, kde(all_x))
@@ -203,8 +201,8 @@ def generate_L_distribution (portfolio, config):
 	start = time.time()
 	with Pool(8) as p:
 		data = np.concatenate(p.map(sub_simulate_L, [(portfolio.sub_portfolio(), n_sample//8)]*8), axis=0)
-	if config.debug:
-		print("Time to simulate L :", time.time()-start, "s")
+	
+	print("Time to simulate L :", time.time()-start, "s")
 	np.save(path.join(result_name(config), portfolio.name, "L.npy"), data)
 
 def plot_L_distribution (portfolio, config):
@@ -294,21 +292,21 @@ def qqplots (portfolio, config):
 	# plt.show()
 
 def main ():
-	config = Config(debug=True, save_plots=True, show_plots=False)
+	config = Config(debug=False, save_plots=True, show_plots=False)
 
 	# plot_hermite_step_approximation ([-1, 0, 1, 2], config)
 	# plot_hermite_step_approximation_error ([-1, 0, 1, 2], config)
 
 	# portfolio = create_protfolio_A (config)
-	# portfolio = create_protfolio_B (config)
+	portfolio = create_protfolio_B (config)
 
-	# plot_epsilon_distribution (portfolio, [1, 3, 6, 9], config)
-	# plot_conditionnal_L (portfolio, [-1, 0, 1, 2], [1, 3, 6, 9], config)
+	plot_epsilon_distribution (portfolio, [1, 3, 6, 9], config)
+	plot_conditionnal_L (portfolio, [-1, 0, 1, 2], [1, 3, 6, 9], config)
 
-	# generate_L_distribution(portfolio, config)
-	# plot_L_distribution (portfolio, config)
-	# plot_gaussian_L_distribution (portfolio, config)
-	# qqplots (portfolio, config)
+	generate_L_distribution(portfolio, config)
+	plot_L_distribution (portfolio, config)
+	plot_gaussian_L_distribution (portfolio, config)
+	qqplots (portfolio, config)
 
 
 if __name__ == "__main__":
