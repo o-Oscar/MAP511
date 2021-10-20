@@ -7,6 +7,7 @@ import scipy.stats
 import scipy.special
 
 import polynomial
+from multiprocessing import Pool
 
 oo = np.inf
 
@@ -83,13 +84,19 @@ class SigmaCalculator:
 	def calc_mu (self, i_init, j_init):
 		if i_init == 0 and j_init == 0:
 			Sigma = np.asarray([[1+self.a**2, self.a**2],[self.a**2, 1+self.a**2]])
-			denom = 2 * np.pi * np.sqrt(np.linalg.det(Sigma))
+			# denom = 2 * np.pi * np.sqrt(np.linalg.det(Sigma))
 
-			def func (x, y):
-				t = np.array([x, y]).reshape((-1, 1))
-				return np.exp(-.5 * t.T @ np.linalg.inv(Sigma) @ t)
+			# def func (x, y):
+			# 	t = np.array([x, y]).reshape((-1, 1))
+			# 	return np.exp(-.5 * t.T @ np.linalg.inv(Sigma) @ t)
+
+			# first_res = scipy.integrate.dblquad(func, -oo, -self.b, lambda x: -oo, lambda x: -self.b)[0] / denom - self.mu[0]**2
+
+			secound_res = scipy.stats.multivariate_normal([0,0], Sigma).cdf([-self.b,-self.b]) - self.mu[0]**2
+
+			# print(first_res, secound_res)
 			
-			return scipy.integrate.dblquad(func, -oo, -self.b, lambda x: -oo, lambda x: -self.b)[0] / denom - self.mu[0]**2
+			return secound_res
 		
 		elif i_init == 0 and j_init == 1:
 			return self.mu[1] * (self.mu_p[0] - self.mu[0])
@@ -119,24 +126,30 @@ class SigmaCalculator:
 # TODO : implement the sigma calculation using sums
 
 class Portfolio:
-	def __init__ (self, all_p, all_rho, all_l):
-		self.all_p = all_p
-		self.all_rho = all_rho
+	def __init__ (self, name, all_p, all_rho, all_l, do_init_mu_sigma=True):
+		self.name = name
+
+		self.all_p = np.array(all_p)
+		self.all_rho = np.array(all_rho)
 		self.all_a = -np.sqrt(1-np.square(all_rho)) / np.abs(all_rho)
 		self.all_b = -scipy.stats.norm.ppf(all_p) / np.abs(all_rho)
 		
-		self.K = len(all_l)
+		self.K = len(all_l) if type(all_l) == list else all_l.shape[0]
 
-		self.all_l = all_l
+		self.all_l = np.array(all_l)
 
 		self.all_m = {}
 		self.all_s = {}
 
-		self.init_mu_sigma ()
+		if do_init_mu_sigma:
+			self.init_mu_sigma ()
 
 	def init_mu_sigma (self):
 		self.all_mu = [MuCalculator(a, b) for a, b in zip(self.all_a, self.all_b)]
 		self.all_sigma = [SigmaCalculator(a, b) for a, b in zip(self.all_a, self.all_b)]
+
+	def sub_portfolio (self):
+		return Portfolio(self.name, self.all_p, self.all_rho, self.all_l, False)
 
 	def m (self, i):
 		if i not in self.all_m:
@@ -175,12 +188,11 @@ class Portfolio:
 		epsilon = np.random.normal(size=(self.K, n_parallel))
 		default = (np.sign(self.all_rho).reshape((self.K, 1)) * Z) > (np.asarray(self.all_a).reshape((self.K, 1)) * epsilon + np.asarray(self.all_b).reshape((self.K, 1)))
 		Y = default.astype(np.float32)
-		print(Y.shape)
 
 		L = np.sum(np.asarray(self.all_l).reshape((self.K, 1)) * Y, axis=0)
-		print(L)
 		return L
 
+"""
 class SimplePortfolio (Portfolio):
 	def __init__ (self, p, rho, all_l):
 		self.K = len(all_l)
@@ -221,3 +233,4 @@ class SimplePortfolio (Portfolio):
 		all_gamma = np.stack([he.calc_gamma(i, cutoffs) * np.sign(self.rho)**i for i in range(I)]) # (I, K, 10)
 		epsilon_i = np.sum(np.expand_dims(self.all_l, axis=(0,2)) * all_gamma, axis=1) # (I, 10)
 		return np.cumsum(epsilon_i * HeZ, axis=0)
+"""

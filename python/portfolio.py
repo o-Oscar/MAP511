@@ -112,7 +112,6 @@ def plot_epsilon (all_i, debug=True):
 			with Pool(8) as p:
 				all_epsilon = np.concatenate(p.map(calc_epsilons, [(i,K)]*(n_sample//10)))
 			
-
 		plt.hist(all_epsilon, bins=100, density=True)
 
 		m = portfolio.m(i)
