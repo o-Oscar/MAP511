@@ -298,15 +298,15 @@ def main ():
 	# plot_hermite_step_approximation_error ([-1, 0, 1, 2], config)
 
 	# portfolio = create_protfolio_A (config)
-	portfolio = create_protfolio_B (config)
+	# portfolio = create_protfolio_B (config)
 
-	plot_epsilon_distribution (portfolio, [1, 3, 6, 9], config)
-	plot_conditionnal_L (portfolio, [-1, 0, 1, 2], [1, 3, 6, 9], config)
+	# plot_epsilon_distribution (portfolio, [1, 3, 6, 9], config)
+	# plot_conditionnal_L (portfolio, [-1, 0, 1, 2], [1, 3, 6, 9], config)
 
-	generate_L_distribution(portfolio, config)
-	plot_L_distribution (portfolio, config)
-	plot_gaussian_L_distribution (portfolio, config)
-	qqplots (portfolio, config)
+	# generate_L_distribution(portfolio, config)
+	# plot_L_distribution (portfolio, config)
+	# plot_gaussian_L_distribution (portfolio, config)
+	# qqplots (portfolio, config)
 
 
 if __name__ == "__main__":

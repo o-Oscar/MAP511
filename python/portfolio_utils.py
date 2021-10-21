@@ -172,7 +172,7 @@ class Portfolio:
 				to_return += l**2 * sigma.get_matrix(N)
 			print("done")
 			self.all_matrix[N] = to_return
-		return self.all_matrix
+		return self.all_matrix[N]
 		# to_return = [[self.s(i,j) for j in range(N)] for i in range(N)]
 		# return np.array(to_return)
 
