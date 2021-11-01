@@ -39,4 +39,13 @@ Enfin, le papier remque qu'en effectuant une transformation de la variable aléa
 
 L'implémentation de ces visualisation expérimentale est effectuées dans les fonctions du fichier python/L2_error.py.
 
+# Portfolio d'obligations
+
+Un sujet d'intérêt pour les banques et autres structures financières est la distribution de leur gain (ou perte) à horizon donné. On s'intéresse ici à une structure disposant d'un portfolio composé d'un grand nombre d'obligations. Une obligation est un produit financier qui oblige le détenteur à payer une certaine somme (fixée) sous certaines conditions (évolution du marché). 
+
+Plus précisément, on s'intéresse à la distribution de $L = \sum_{k=1}^K l_k Y_k$ où K est grand. Les l_k sont les prix des obligations et les Y_k sont des variables a de bernouilly indiquant si l'obligation est due ou non. On suppose ici une dépendance de copule gaussienne entre les Y_k. En particulier, on a $Y_k = 1_{c_k<X_k}$ où $c_k$ est un seuil et $X_k = \rho_k Z + \sqrt{1-\rho_k^2} \varepsilon_k$. $Z \sim N(0,1)$ simule l'état du marché global, l'ensemble des $\varepsilon_k \sim N(0,1)$ correspondentaux variabilités individuelles de chaque obligation et les $\rho_k$ sont des facteurs de correlation entre -1 et 1.
+
+
+
+
 
