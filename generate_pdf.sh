@@ -1,0 +1,1 @@
+pdflatex -output-directory=latex/output latex/rapport_01.tex 
