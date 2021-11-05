@@ -85,7 +85,7 @@ def plot_l2 (poly_app, all_c, all_slopes, config):
 
 	plt.legend(["c="+str(c) for c in all_c] + ["slope="+str(slope) for slope in all_slopes])
 	plt.title("L2 Error - " + poly_app.full_description())
-	show_or_plot(path.join("chaos_expansions", "L2_"+poly_app.name), config)
+	show_or_plot(path.join("chaos_expansions", "L2_"+poly_app.full_description()), config)
 
 def plot_all_l2 (config):
 	plot_l2(polynomial.HermiteApproximation (), [0.1, 1, 2], [-1/4], config)
@@ -257,7 +257,7 @@ def main ():
 	plot_small_quantile (config)
 	plot_high_quantile (config)
 
-	# plot_test (debug=debug)
+	plot_test (debug=debug)
 
 if __name__ == "__main__":
 	main()

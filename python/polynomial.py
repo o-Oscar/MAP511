@@ -71,11 +71,12 @@ class PolynomialApproximation:
 
 		return fX, pX
 	
-	def params_description (self):
-		return "   ".join(self.string_params)
+	def params_description (self, to_join="   "):
+		return to_join.join(self.string_params)
 
 	def full_description (self):
-		return self.name + "   " + self.params_description()
+		param_desc = self.params_description(to_join="_")
+		return self.name + ("_" + param_desc if len(param_desc) > 0 else "")
 
 class HermiteApproximation (PolynomialApproximation):
 	def __init__ (self):
