@@ -32,7 +32,7 @@ def show_or_plot (path_suffix, config):
 		res_name = result_name(config)
 		full_path = path.join(res_name, path_suffix)
 		Path(full_path).parent.mkdir(parents=True, exist_ok=True)
-		plt.savefig(full_path, dpi=300)
+		plt.savefig(full_path, dpi=300, bbox_inches="tight")
 	
 	if config.show_plots:
 		plt.show()
@@ -112,7 +112,7 @@ def plot_jacobi_comp (config):
 	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
 
 	plt.plot(all_q, all_l2.T, "--o")
-	plt.legend([ja.full_description() for ja in all_ja])
+	plt.legend([ja.full_description() for ja in all_ja], bbox_to_anchor=(0., 1.1, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0.)
 	plt.xlabel("Quantile q")
 	plt.ylabel("L2 Error")
 	plt.title("N="+str(N))
@@ -135,7 +135,7 @@ def plot_cops_comp (N, config):
 	all_l2 = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) for ja in all_ja], axis=0)
 
 	plt.plot(all_q, all_l2.T, "--o")
-	plt.legend([ja.full_description() for ja in all_ja])
+	plt.legend([ja.full_description() for ja in all_ja], bbox_to_anchor=(0., 1.1, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0.)
 	plt.xlabel("Quantile q")
 	plt.ylabel("L2 Error")
 	plt.title("N="+str(N))
@@ -164,7 +164,8 @@ def plot_error_ratio (N, config):
 	all_ratio = np.stack([ja.calc_all_l2(N, ja.c_quantile(all_q), size=n_sample) * ja.bound_inv(N, all_q) for ja in all_ja], axis=0)
 
 	plt.plot(all_q, all_ratio.T, "--o")
-	plt.legend([ja.full_description() for ja in all_ja])
+	plt.legend([ja.full_description() for ja in all_ja], bbox_to_anchor=(0., 1.1, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0.)
+
 	plt.xlabel("Quantile q")
 	plt.ylabel("Ratio of L2 error and error estimate")
 	plt.title("N="+str(N))
@@ -244,20 +245,20 @@ def plot_test (debug=False):
 
 def main ():
 	# print_coefs()
-	config = Config(debug=False, save_plots=True, show_plots=False)
+	config = Config(debug=False, save_plots=True, show_plots=True)
 
-	plot_all_l2 (config)
+	# plot_all_l2 (config)
 
 	
 	plot_jacobi_comp(config)
 	plot_all_cops_comp (config)
 
-	plot_all_error_ratio (config)
+	# plot_all_error_ratio (config)
 
-	plot_small_quantile (config)
-	plot_high_quantile (config)
+	# plot_small_quantile (config)
+	# plot_high_quantile (config)
 
-	plot_test (debug=debug)
+	# plot_test (debug=debug)
 
 if __name__ == "__main__":
 	main()
